@@ -20,11 +20,11 @@ Customers can explore services, browse products, make bookings, and purchase ite
 
 ### Seller Experience
 - **Business Presence:** Establish an online storefront without building a separate website.
-- **Product Management:** Add, edit, and delete product listings.
-- **Product Information:** Manage product names, prices, quantities, and images.
-- **Business Management:** Maintain business information and showcase offerings.
-- **Service Listings:** Present services to potential customers.
-- **Centralized Management:** Manage products and business information from the seller interface.
+- **Seller Dashboard:** Three dedicated pages for My Products, My Services, and Business Info, linked by a shared tab bar.
+- **Product Management:** Add, edit, and delete product listings with names, prices, stock quantities, and images. Stock badges show in stock, low stock, and out of stock.
+- **Service Management:** Add, edit, and delete services with a description, price, availability, contact phone, location, social handle, and image.
+- **Business Management:** Create and edit store details: name, description, category, phone, email, address, location, and logo.
+- **Image Uploads:** Upload PNG, JPG, or WEBP images (up to 2 MB) for products, services, and the business logo.
 
 ### Platform Architecture
 - **Role-Based Experiences:** Separate interfaces for Customers, Sellers, and Admins.
@@ -32,19 +32,20 @@ Customers can explore services, browse products, make bookings, and purchase ite
 - **Role-Specific Navigation:** Dedicated customer and seller navigation bars.
 - **Administrative Dashboard:** A separate interface for platform administration.
 - **Shared Components:** Reusable UI components and a common footer.
+- **REST API:** Create, read, update, and delete endpoints for products, services, and stores, with server-side validation.
 - **Responsive Design:** Designed to support a consistent experience across desktop and mobile devices.
-
-*Feature availability depends on implementation progress. Features listed here are part of the product scope and are not necessarily fully functional yet.*
 
 ## Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| [Next.js](https://nextjs.org/) | Full-stack web application framework |
+| [Next.js](https://nextjs.org/) | Full-stack web application framework (App Router and API route handlers) |
 | [TypeScript](https://www.typescriptlang.org/) | Type-safe application development |
 | [Tailwind CSS](https://tailwindcss.com/) | Utility-first styling and responsive UI |
 | [PostgreSQL 18](https://www.postgresql.org/) | Relational database |
 | [pgAdmin 4](https://www.pgadmin.org/) | Database administration |
+| [lucide-react](https://lucide.dev/) | Icons |
+| [react-phone-number-input](https://www.npmjs.com/package/react-phone-number-input) | Phone number fields |
 | [Paystack](https://paystack.com/) | Planned payment processing integration |
 | [Git](https://git-scm.com/) and [GitHub](https://github.com/) | Version control and collaboration |
 
@@ -83,10 +84,6 @@ Create a `.env.local` file in the project root:
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/localspace"
 ```
 
-Replace `USER` and `PASSWORD` with your PostgreSQL credentials and ensure that the `localspace` database exists.
-
-Add payment-related environment variables only when configuring the payment integration. Never commit secret keys or production credentials to the repository.
-
 ### Run the Application
 
 Start the development server:
@@ -99,29 +96,42 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Project Structure
 
-The application is organized around customer-facing pages, seller functionality, administrative interfaces, and reusable components.
+The application is organized around customer-facing pages, seller functionality, administrative interfaces, API routes, and reusable components.
 
 ```text
 local-space/
 ├── app/
-│   ├── (main)/          
-│   ├── seller/          
-│   ├── admin/          
-│   └── login/          
+│   ├── (main)/
+│   │   ├── customer/        customer pages
+│   │   ├── seller/
+│   │   │   ├── products/    My Products page
+│   │   │   ├── services/    My Services page
+│   │   │   └── business/    Business Info page
+│   │   └── store/           public store listing
+│   ├── admin/
+│   ├── api/
+│   │   ├── products/        route.ts and [id]/route.ts
+│   │   ├── services/        route.ts and [id]/route.ts
+│   │   ├── stores/          route.ts and [id]/route.ts
+│   │   └── uploads/         route.ts
+│   └── login/
 ├── components/
+│   ├── seller/              tab components, shared UI, upload helper
 │   ├── CustomerNavbar
 │   ├── SellerNavbar
-│   ├── Footer
-│   └── UI components
+│   └── Footer
 ├── lib/
-│   └── assets.ts        
-├── public/              
-├── .env.local          
+│   ├── assets.ts
+│   ├── db.ts                PostgreSQL connection pool
+│   └── mockDb.ts            temporary in-memory storage
+├── public/
+│   └── uploads/             uploaded images (not committed)
+├── .env.local
 ├── package.json
 └── README.md
 ```
 
-*The structure above reflects the current intended organization. Individual files and directories may evolve as development progresses.*
+*The structure above reflects the current organization. Individual files and directories may evolve as development progresses.*
 
 ## Application Flow
 
@@ -136,8 +146,8 @@ local-space/
       Services   Store  Dashboard
          |        |       |
        Market   Products Administration
-         |        |
-      Bookings Business Info
+         |      Services
+      Bookings  Business Info
          \        /
           Shared Platform
                  |
@@ -145,6 +155,40 @@ local-space/
 ```
 
 Each role has a distinct experience tailored to its responsibilities. Customers discover and purchase offerings, sellers manage their businesses, and administrators oversee platform operations.
+
+## API Reference
+
+All endpoints return JSON. Invalid input returns `400` with an `error` message, and unknown ids return `404`.
+
+| Resource | Method | Route | Description |
+|---|---|---|---|
+| Products | GET | `/api/products` | List all products |
+| Products | POST | `/api/products` | Add a product |
+| Products | GET, PUT, PATCH, DELETE | `/api/products/:id` | Get, replace, update fields, delete |
+| Services | GET | `/api/services` | List all services |
+| Services | POST | `/api/services` | Add a service |
+| Services | GET, PUT, PATCH, DELETE | `/api/services/:id` | Get, replace, update fields, delete |
+| Stores | POST | `/api/stores` | Create a store |
+| Stores | GET, PUT, DELETE | `/api/stores/:id` | Get, edit, delete |
+| Uploads | POST | `/api/uploads` | Upload an image (`multipart/form-data`, field `file`). Returns `{ "url": "/uploads/..." }` |
+
+## Database
+
+Stores are saved in PostgreSQL. The `stores` table has these columns:
+
+| Column | Description |
+|---|---|
+| `id` | Primary key |
+| `name` | Business name |
+| `description` | Business description |
+| `logo_url` | Path of the uploaded logo |
+| `category` | Business category |
+| `phone` | Business phone number |
+| `email` | Business email |
+| `address` | Street address |
+| `location` | City and state |
+
+Products and services are currently kept in memory (`lib/mockDb.ts`), so they reset when the development server restarts.
 
 ## Design System
 
@@ -166,10 +210,18 @@ The final pricing structure, subscription benefits, and commission rates will be
 
 ## Roadmap
 
+### Completed
+- [x] Split the seller dashboard into separate Products, Services, and Business Info pages.
+- [x] Build REST API routes for products, services, and stores with server-side validation.
+- [x] Add image uploads for products, services, and business logos.
+- [x] Connect the seller pages to the API.
+- [x] Save store details to PostgreSQL.
+
 ### Marketplace Development
-- [ ] Connect seller product management to PostgreSQL.
+- [ ] Move products and services from in-memory storage to PostgreSQL with a `store_id` link.
 - [ ] Display seller products in the customer-facing marketplace.
-- [ ] Implement business registration and profile management.
+- [ ] Add an advert and showcase section to the store page.
+- [ ] Implement business registration and profile management tied to the logged-in seller.
 - [ ] Complete customer pages: About, Market, Testimonials, and Contact.
 - [ ] Complete the seller storefront and business management experience.
 
@@ -182,15 +234,16 @@ The final pricing structure, subscription benefits, and commission rates will be
 ### Platform Improvements
 - [ ] Complete the admin dashboard.
 - [ ] Implement and test authentication and role-based authorization.
+- [ ] Add ownership checks so sellers can only edit their own items.
 - [ ] Complete responsive layouts across devices.
-- [ ] Validate inputs and secure database operations.
 - [ ] Test core workflows and prepare for deployment.
 
 ## Security Considerations
 
 - Store credentials and API secrets in environment variables.
 - Enforce authentication and server-side role-based authorization.
-- Validate user input before database operations.
+- Validate user input on the server before saving it.
+- Restrict uploads to PNG, JPG, and WEBP files under 2 MB.
 - Verify payment transactions on the server before confirming orders or bookings.
 - Protect customer, seller, and transaction data.
 - Apply appropriate database constraints and error handling.
