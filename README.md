@@ -44,9 +44,11 @@ Customers can explore services, browse products, make bookings, and purchase ite
 | [Tailwind CSS](https://tailwindcss.com/) | Utility-first styling and responsive UI |
 | [PostgreSQL 18](https://www.postgresql.org/) | Relational database |
 | [pgAdmin 4](https://www.pgadmin.org/) | Database administration |
+| [Supabase](https://supabase.com/) | Authentication and user login|
 | [lucide-react](https://lucide.dev/) | Icons |
 | [react-phone-number-input](https://www.npmjs.com/package/react-phone-number-input) | Phone number fields |
 | [Paystack](https://paystack.com/) | Planned payment processing integration |
+
 | [Git](https://git-scm.com/) and [GitHub](https://github.com/) | Version control and collaboration |
 
 ## Getting Started
