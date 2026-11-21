@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const links = [
-  { label: "Home", href: "/" },
+  { label: "Home", href: "/customer" },
   { label: "Get started", href: "/customer/#get-started" },
   { label: "Market", href: "/customer#market" },
   { label: "Testimonials", href: "/customer/#testimonials" },
@@ -15,9 +16,11 @@ export default function CustomerNavbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    // TODO: clear the session here
-    router.push("/login");
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
   };
 
   return (
@@ -30,7 +33,9 @@ export default function CustomerNavbar() {
         <ul className="hidden gap-7 md:flex">
           {links.map((l) => {
             const active =
-              l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+              l.href === "/customer"
+                ? pathname === "/customer"
+                : pathname.startsWith(l.href);
             return (
               <li key={l.label}>
                 <Link
